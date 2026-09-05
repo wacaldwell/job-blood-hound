@@ -5,10 +5,15 @@ from public ATS APIs, generates a tailored resume and cover letter per job,
 tracks everything in a local database. You apply by hand. See README.md for the
 full picture; this is just the run sequence.
 
+The main value is application assistance: fit checking, tailored documents,
+interview preparation, and tracking. Discovery is optional. You can fetch a
+posting found elsewhere with `python job_cli.py fetch <url>` and use the same
+review and preparation workflow.
+
 ## One-time setup
 
 ```bash
-git clone <this repo> job-hound
+git clone <repository-url> job-hound
 cd job-hound
 
 python3 -m venv .venv
@@ -47,9 +52,17 @@ export JOB_DB="$PWD/jobs.db"
 export JOB_APPS_DIR="$PWD/applications"
 ```
 
+These are local-only paths. If you prefer to keep personal data elsewhere,
+set `JOB_MASTER`, `JOB_PROFILE`, `JOB_IDEAL_JD`, and `JOB_CONFIG` to the four
+private config files, and set `JOB_DB` and `JOB_APPS_DIR` to private storage
+locations. Do not put those paths or files in Git.
+
 `JOB_DB` has no default. With it unset and no `jobs.db` in the working
 directory, the CLI refuses to start rather than quietly creating a second
 database somewhere you will forget about.
+
+The API key is required for the fit gate and document generation, but not for
+installing the project, running the tests, or inspecting a local database.
 
 PDFs need LibreOffice on `PATH` (optional; DOCX works without it):
 

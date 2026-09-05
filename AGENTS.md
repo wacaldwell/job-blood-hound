@@ -21,6 +21,42 @@ Seven stages over one SQLite system of record: discover (`job_monitor.py`),
 store (`jobdb.py`), gate (`gate.py`), generate (`job_generate.py`), track
 (`job_cli.py`), freshness (`freshness.py`), liveness (`liveness.py`).
 
+## Public-safe operator setup
+
+This is a personal job-search tool, not an applicant-tracking system or an
+application bot. Its scope is public job discovery, fit evaluation, interview
+tracking, and preparation of documents for a human to review and submit. The
+target role, seniority, location policy, salary floor, watched companies, and
+exclusions are operator choices, not repository defaults.
+
+The primary proven workflow is application assistance: tailoring documents,
+checking fit, preparing for interviews, tracking rounds and state, and
+organizing the search. Discovery is an optional convenience, not a promise
+that the tool will supply the roles a person applies to. A human may fetch a
+posting found elsewhere and use the same gate, preparation, and tracking
+workflow.
+
+Keep the operator's files outside the tracked tree. The normal root-relative
+paths are only examples and may be replaced with absolute paths through the
+environment:
+
+- `master_resume.yaml` (`JOB_MASTER`): the source of truth for experience and
+  the `do_not_claim` ledger. Start from `master_resume.example.yaml`.
+- `profile.yaml` (`JOB_PROFILE`): target titles, location rules, and scoring
+  settings. Start from `profile.example.yaml`.
+- `ideal-jd.md` (`JOB_IDEAL_JD`): prose describing the role sought by the wide
+  net. Start from `ideal-jd.example.md`.
+- `companies.yaml` (`JOB_CONFIG`): public ATS boards and discovery filters.
+  Start from `companies.example.yaml`.
+- `jobs.db` (`JOB_DB`): the one SQLite system of record. Keep it outside Git.
+- `applications/` (`JOB_APPS_DIR`): generated packages, also outside Git.
+
+Before running a real search, copy the example files to private paths, set
+`JOB_MASTER`, `JOB_PROFILE`, `JOB_IDEAL_JD`, `JOB_CONFIG`, `JOB_DB`, and
+`JOB_APPS_DIR`, and confirm `git status` shows no live data. Never put a real
+resume, job ledger, posting database, generated package, API key, or operator
+path into an issue, fixture, test, commit, or pull request.
+
 ## Hard rules, non-negotiable
 
 - **Never auto-apply.** No code that submits applications, fills external

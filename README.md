@@ -13,6 +13,17 @@ advantage of preparing each application properly. There is no submit endpoint,
 no form filler, and no login automation anywhere in this repo, and none will be
 added.
 
+## How this was actually used
+
+The strongest use case is assistance while applying, not autonomous lead
+generation. In practice, the tool was used primarily to prepare and tailor
+applications, evaluate fit before drafting, prepare for interviews, track
+interview rounds and application state, and keep the overall search organized.
+The discovery stages are useful optional inputs, but the original operator did
+not rely on this app's discovered leads as the main source of applications.
+Treat discovery as a convenience, and bring in a posting directly with
+`job_cli.py fetch` when it came from another source.
+
 ## At a glance
 
 | | |
@@ -88,13 +99,24 @@ removes a real opportunity and no later stage would surface it again.
 
 ## Install
 
+For a local installation, use your own copy of the public repository. Each
+installation has its own SQLite database, application packages, filters, and
+resume data:
+
 ```bash
-git clone <this repo>
+git clone <repository-url> job-hound
 cd job-hound
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
+
+The repository contains only synthetic example data. Before a real run, copy
+the four `.example` files to the private paths you choose and set the matching
+`JOB_*` variables, as shown below. Keep the live resume, job database, and
+generated packages outside Git. A friend can use `$PWD/jobs.db` and
+`$PWD/applications` for an entirely local installation; no shared database or
+deployment host is required.
 
 PDFs are generated through LibreOffice if `soffice` is on your `PATH`. Without
 it, DOCX still writes; set `JOB_PDF=off` to skip the PDF step cleanly.
@@ -129,6 +151,11 @@ cp .env.example .env
 $EDITOR .env
 set -a; source .env; set +a
 ```
+
+An API key is needed only for model-backed fit checks, refinement, and draft
+generation. Discovery from public ATS endpoints, local state inspection, and
+the test suite do not require one. Never commit `.env` or paste a real key into
+the repository.
 
 At minimum you need:
 

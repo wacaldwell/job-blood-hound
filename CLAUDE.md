@@ -16,6 +16,43 @@ titles, the companies watched, the wanted-role prose, the on-site area for
 non-remote roles (`onsite_ok`) and the salary floor (`salary_floor`) all live
 in operator-supplied data files, and the code reads them from there.
 
+## Scope and private paths
+
+The intended job scope is configurable: public ATS discovery, a deep watch of
+selected boards, a wide-net search against the public corpus, fit scoring,
+interview tracking, and application preparation for a human reviewer. It does
+not submit applications, log into job sites, or decide a role's fit without
+the operator's fail-closed gate and review. Titles, seniority, remote or
+on-site policy, salary floor, watched companies, and excluded roles belong in
+the operator's private configuration rather than in code.
+
+The primary real-world use is application assistance rather than autonomous
+lead generation. The useful path is to evaluate a role, tailor the resume and
+cover letter, prepare for interviews, track rounds and application state, and
+keep the search organized. The original operator did not rely on this app's
+discovered leads as the main source of applications. Discovery is therefore
+an optional convenience; a role found elsewhere can enter the same workflow
+through `job_cli.py fetch`.
+
+Use these root-relative names only as safe examples. Keep the live files
+outside Git and point to them with environment variables when they live
+elsewhere:
+
+| Purpose | Example path | Override |
+| --- | --- | --- |
+| What the operator has done, plus `do_not_claim` | `master_resume.yaml` | `JOB_MASTER` |
+| Target titles, location policy, and scoring | `profile.yaml` | `JOB_PROFILE` |
+| Prose describing the wanted role | `ideal-jd.md` | `JOB_IDEAL_JD` |
+| Watched ATS boards and filters | `companies.yaml` | `JOB_CONFIG` |
+| SQLite system of record | `jobs.db` | `JOB_DB` |
+| Generated resume and cover-letter packages | `applications/` | `JOB_APPS_DIR` |
+
+Start from the tracked `.example` templates. A safe local setup can use
+`$PWD` for the database and packages, while a managed deployment can use its
+own external paths. Do not document or commit a real operator resume,
+database, generated package, host path, endpoint, credential, or search
+history. The tracked examples and test fixtures must remain synthetic.
+
 **First run.** Those four data files are gitignored so a fork never carries
 someone else's career. The repo tracks `.example` templates; copy them before
 anything works:
