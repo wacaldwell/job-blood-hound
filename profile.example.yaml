@@ -1,0 +1,111 @@
+# profile.example.yaml - fit-scoring weights and targets for ranking leads.
+#
+# Copy this to profile.yaml and tune it. The real file is gitignored, because
+# its onsite_ok list and salary floor describe where you live and what you will
+# take.
+#
+# Hand-tunable. Read by fit.score(), and remote_ok/onsite_ok are read again by
+# gate._location_rules() so the scan, the ranker and the gate agree. Separate
+# from companies.yaml (scan targets) and master_resume.yaml (source experience).
+
+# Title families. A title matching a "strong" term scores higher than "good".
+target_titles:
+  strong:
+    - solutions architect
+    - principal
+    - staff
+    - engineering manager
+    - senior manager
+    - director
+    - architect
+  good:
+    - platform lead
+    - cloud lead
+    - sre lead
+    - devops lead
+    - infrastructure lead
+    - team lead
+    - tech lead
+
+# Location tokens that mean remote-US-eligible, and the on-site area you accept.
+remote_ok: [remote, anywhere, distributed, united states, "u.s."]
+onsite_ok: [portland, beaverton]
+
+# Salary floor. Only applied when the listing carries a salary; absent = neutral.
+salary_floor: 150000
+
+# Heavy hands-on-coding markers (the coding-bar lesson: a management title over
+# a daily-coding job is the most expensive false positive here). Each hit
+# penalizes.
+coding_bar_markers:
+  - codes daily
+  - hands-on coding
+  - strong programming
+  - proficient in go
+  - proficient in rust
+  - write production code
+  - software development engineer
+
+# Presales / field-sales vocabulary. A software vendor's "Solutions Architect"
+# runs demos, PoVs, and competitive positioning; it shares two words with the
+# AWS cloud architecture role you want and nothing else. Each hit penalizes AND
+# withholds the title bonus. Kept to unambiguous multi-word phrases on purpose:
+# bare "demo", "deal", "pipeline", "prospect" and "field" all appear in
+# legitimate infra postings (and "ideal" contains "deal").
+sales_markers:
+  - presales
+  - pre-sales
+  - sales engineer
+  - sales engineering
+  - account executive
+  - quota
+  - competitive positioning
+  - proof of value
+  - pov motion
+  - technical win
+  - sales cycle
+  - sales enablement
+  - field enablement
+  - enablement curriculum
+  - solution consultant
+  # NOT "discovery call": it matched an Engineering Manager posting that used
+  # the phrase in its INTERVIEW PROCESS section. Same for bare "demo",
+  # "customer-facing" and "revenue", which are common in legitimate platform
+  # postings.
+
+# Professional services / customer-delivery vocabulary. The post-sales sibling of
+# the above: implementation and engagement work rather than demos and PoVs.
+# Caught separately because the presales markers miss it entirely (three vendor
+# postings, Globex, Initech and Contoso Health, all still scored 90 after
+# sales_markers shipped).
+# Each phrase below was measured against 76 real engineering postings with zero
+# false positives; bare "consulting", "customer success" and "delivery team" all
+# hit legitimate platform roles and are deliberately absent.
+services_markers:
+  - professional services
+  - services organization
+  - trusted advisor
+  - sales team
+  - engagement manager
+  - customer implementations
+
+# Hard-noise markers that should sink a lead.
+exclude_markers:
+  - hardware
+  - manufacturing
+  - security clearance
+  - active clearance
+
+# Scoring weights. Base score is 30; signals add or subtract; result clamps 0..100.
+weights:
+  title_strong: 40
+  title_good: 25
+  remote: 20
+  onsite: 10
+  no_location_match: -20
+  salary_meets: 15
+  salary_below: -15
+  coding_penalty: -15
+  sales_penalty: -15
+  services_penalty: -15
+  exclude_penalty: -40

@@ -1,0 +1,221 @@
+name: Deploy job-hound
+
+# Merging to main deploys to the deployment host. Nothing here is a step a human has
+# to remember, which is the entire point: the previous manual workflow left an
+# MCP process running two-day-old code for two days, and the only reason that
+# surfaced was someone asking an unrelated question.
+#
+# Runs on the self-hosted runner registered to this repo
+# (a self-hosted runner on the deployment host), which is already
+# logged in as the user that owns ~/job-hound and the systemd user units.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# A second merge while a deploy is mid-flight would otherwise race: two pulls
+# and two restarts against one checkout. Queue instead, and do not cancel the
+# one in progress, because a half-applied deploy is worse than a slow one.
+concurrency:
+  group: deploy-job-hound
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Pull, restart, verify
+    runs-on: [self-hosted, job-hound]
+    timeout-minutes: 10
+
+    steps:
+      - name: Pull latest code
+        id: pull
+        env:
+          PUSH_BEFORE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          cd ~/job-hound
+          HOST_BEFORE=$(git rev-parse HEAD)
+          git fetch origin main
+          # --ff-only, deliberately not `reset --hard`: this checkout sits
+          # beside jobs.db, the single system of record. A fast-forward that
+          # cannot apply should fail loudly rather than discard whatever is
+          # there.
+          git merge --ff-only origin/main
+          NEW=$(git rev-parse HEAD)
+
+          # The change range must NOT come from this host's HEAD. ~/job-hound is
+          # a working copy a human can commit in, and if a commit is made and
+          # pushed from here then HOST_BEFORE already equals origin/main by the
+          # time the runner starts. The fast-forward is then a no-op, changed
+          # reads "none", and the restart is skipped over code that did change.
+          # prometheus-grafana-setup hit exactly this and deployed nothing twice
+          # while reporting success (see its PR #39).
+          #
+          # github.event.before describes what the push actually moved,
+          # independent of where the commit was authored. It is empty on
+          # workflow_dispatch and all-zero on a branch's first push; both mean
+          # "no usable range", and the safe reading is that everything changed.
+          OLD="${PUSH_BEFORE:-}"
+          ZERO="0000000000000000000000000000000000000000"
+          if [ -z "$OLD" ] || [ "$OLD" = "$ZERO" ] \
+             || ! git merge-base --is-ancestor "$OLD" "$NEW" 2>/dev/null; then
+            echo "No usable push range (before='${OLD:-unset}'); treating everything as changed."
+            OLD=$(git rev-list --max-parents=0 HEAD | tail -1)
+          fi
+
+          echo "old=$OLD" >> "$GITHUB_OUTPUT"
+          echo "new=$NEW" >> "$GITHUB_OUTPUT"
+
+          if [ "$OLD" = "$NEW" ]; then
+            echo "changed=none" >> "$GITHUB_OUTPUT"
+            echo "Already at $NEW, nothing to deploy."
+          else
+            echo "changed=yes" >> "$GITHUB_OUTPUT"
+            echo "Deploying $OLD -> $NEW (host was at $HOST_BEFORE)"
+            git --no-pager log --oneline "$OLD..$NEW"
+          fi
+
+      - name: Install dependencies if they changed
+        if: steps.pull.outputs.changed == 'yes'
+        run: |
+          set -euo pipefail
+          cd ~/job-hound
+          if git diff --name-only ${{ steps.pull.outputs.old }}..${{ steps.pull.outputs.new }} | grep -qx 'requirements.txt'; then
+            echo "requirements.txt changed, installing"
+            .venv/bin/pip install -q -r requirements.txt
+          else
+            echo "requirements.txt unchanged, skipping"
+          fi
+
+      - name: Validate before restarting anything
+        if: steps.pull.outputs.changed == 'yes'
+        run: |
+          set -euo pipefail
+          cd ~/job-hound
+          # Fail BEFORE a service is touched. The only prior gate was
+          # `set -euo pipefail` around a pip install, which catches a broken
+          # dependency install but says nothing about the code being deployed.
+          # A syntax error or a bad import would take the write API down and
+          # only surface afterwards in the health probe, by which point the
+          # service is already stopped.
+          #
+          # -x excludes the virtualenv; compiling it is slow and its contents
+          # are not what this deploy changed.
+          .venv/bin/python -m compileall -q -x '[.]venv' .
+
+          # Import the actual entry points, not a shared dependency of them.
+          #
+          # An earlier version of this gate imported only jobdb, on the reasoning
+          # that every service path reaches it. That is backwards: jobapi imports
+          # jobdb, not the other way round, so importing jobdb never exercises
+          # jobapi. compileall catches syntax errors but not import errors, so a
+          # misspelled top-level import in jobapi would pass both checks, the API
+          # would be restarted, and bin/job-api.sh would then fail loading
+          # jobapi:app — the exact failure this gate exists to prevent.
+          #
+          # jobapi is what uvicorn loads. job_hound_mcp and job_cli are the other
+          # things this deploy retires or reloads. All three are import-safe:
+          # job_cli and job_hound_mcp guard their main, and jobapi does no
+          # blocking module-level work (uvicorn imports it the same way).
+          .venv/bin/python -c "
+          import jobapi, job_hound_mcp, job_cli, openjobs
+          print('entry points import cleanly: jobapi, job_hound_mcp, job_cli, openjobs')
+          "
+
+      - name: Restart services if any Python or dependency changed
+        if: steps.pull.outputs.changed == 'yes'
+        run: |
+          set -euo pipefail
+          export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+          cd ~/job-hound
+          # Deliberately coarse: ANY .py change restarts everything, rather
+          # than mapping files to the service that owns them. jobapi imports
+          # jobdb, the MCP imports job_cli which imports six more modules, and
+          # a hand-maintained map of that would drift. A restart costs seconds;
+          # a service silently running stale code costs days.
+          #
+          # requirements.txt counts too. A long-running process holds the
+          # dependency versions it imported at startup, so a dependency-only
+          # merge would pip install the new package and leave the old one
+          # resident. The health probe would then pass against that stale
+          # process and the deploy would report success over an upgrade that
+          # never took effect, which is exactly the silent-staleness failure
+          # this workflow exists to end.
+          CHANGED=$(git diff --name-only ${{ steps.pull.outputs.old }}..${{ steps.pull.outputs.new }})
+          if echo "$CHANGED" | grep -qE '(\.py$|^requirements\.txt$)'; then
+            echo "Python or dependencies changed, restarting write API"
+            systemctl --user restart job-api.service
+
+            # The MCP server is spawned per client connection over stdio, so
+            # there is nothing to restart, only stale processes to retire. They
+            # respawn on the next call. Note the bracket in the pattern: a bare
+            # `pkill -f job_hound_mcp.py` also matches the shell running it and
+            # kills its own job.
+            if pkill -f 'job_hound[_]mcp'; then
+              echo "Retired stale MCP process(es)"
+            else
+              echo "No MCP process was running"
+            fi
+          else
+            echo "No Python or dependency change, services left alone"
+          fi
+
+      - name: Verify
+        run: |
+          set -euo pipefail
+          export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+          cd ~/job-hound
+
+          # The deployed commit is what we think it is.
+          HEAD_NOW=$(git rev-parse HEAD)
+          echo "Deployed commit: $HEAD_NOW"
+          if [ "$HEAD_NOW" != "${{ steps.pull.outputs.new }}" ]; then
+            echo "ERROR: HEAD moved during deploy"
+            exit 1
+          fi
+
+          # The write API answers. 404 is the correct response: the service is
+          # up and authenticated and the job does not exist. A 401 means the
+          # token is wrong; a connection error means it is down.
+          set -a; . ~/.config/job-hound/job-hound.env; set +a
+          for i in $(seq 1 10); do
+            CODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 \
+              -X POST "localhost:${JOB_API_PORT:-8765}/jobs/nope/read" \
+              -H "Authorization: Bearer $JOB_API_TOKEN" \
+              -H 'Content-Type: application/json' -d '{"read":true}' || echo "000")
+            if [ "$CODE" = "404" ]; then
+              echo "Write API healthy (404 as expected, ${i} attempt(s))"
+              break
+            fi
+            if [ "$i" = "10" ]; then
+              echo "ERROR: write API returned $CODE after 10 attempts"
+              journalctl --user -u job-api --no-pager -n 40
+              exit 1
+            fi
+            sleep 3
+          done
+
+          # The CLI can open the database and read it. This is the check that
+          # would catch a migration that failed to apply, which is the one
+          # deploy-time failure that no service restart would reveal.
+          JOB_DB=~/job-hound/jobs.db .venv/bin/python -c "
+          import jobdb
+          db = jobdb.JobDB('$HOME/job-hound/jobs.db')
+          n = db.conn.execute('SELECT COUNT(*) FROM jobs').fetchone()[0]
+          print(f'Database opens cleanly, {n} jobs')
+          db.close()
+          "
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### job-hound deploy"
+            echo ""
+            if [ "${{ steps.pull.outputs.changed }}" = "none" ]; then
+              echo "No new commits. Host was already at \`${{ steps.pull.outputs.new }}\`."
+            else
+              echo "Deployed \`${{ steps.pull.outputs.old }}\` to \`${{ steps.pull.outputs.new }}\`."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

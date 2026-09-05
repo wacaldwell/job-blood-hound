@@ -1,0 +1,219 @@
+# companies.example.yaml - config for job_monitor.py (the deep watch).
+#
+# Copy this to companies.yaml and edit it. The real file is gitignored, because
+# a target list plus a commuting radius says a lot about where you live and who
+# you are talking to.
+#
+# title_terms / location_terms / exclude_terms are matched case-insensitively.
+# A job matches if: its title contains ANY title_term, AND (if location_terms
+# are set) the title or location contains ANY location_term, AND it contains
+# NONE of the exclude_terms.
+#
+# Each company needs: name, ats, slug.
+#   slug = the identifier in that ATS's URL.
+#     Greenhouse:      boards.greenhouse.io/SLUG          -> slug
+#     Lever:           jobs.lever.co/SLUG                 -> slug
+#     Ashby:           jobs.ashbyhq.com/SLUG              -> slug
+#     SmartRecruiters: jobs.smartrecruiters.com/SLUG      -> slug
+#     Workday:         HOST/SITE, e.g. acme.wd1.myworkdayjobs.com/Careers
+# For icims/manual, and for any Workday tenant whose HOST/SITE pair you cannot
+# work out, there is no feed the scanner can read, so list a careers_url and
+# the script will print them for you to check by hand.
+#
+# Optional per-company keys:
+#   careers_url   printed for the manual list; also useful documentation
+#   search_text   Workday only, narrows server-side on oversized tenants
+#   category      free-text bucket carried onto the job row (see below)
+#
+# IMPORTANT: the slugs below are best guesses that change over time. Before
+# trusting a run, open each company's careers page and confirm the real slug.
+# A wrong one returns 404/403, which is logged and the scan continues.
+
+title_terms:
+  # senior IC
+  - "site reliability"
+  - "SRE"
+  - "production engineer"
+  - "platform engineer"
+  - "platform engineering"
+  - "cloud engineer"
+  - "cloud architect"
+  - "cloud infrastructure"
+  - "cloud operations"
+  - "cloud automation"
+  - "infrastructure manager"
+  - "infrastructure engineer"
+  - "reliability engineer"
+  - "devops engineer"
+  - "devops"
+  - "devsecops"
+  - "ml platform"
+  - "machine learning platform"
+  - "ai infrastructure"
+  - "ai platform"
+  - "solutions architect"
+  # scoped leadership (bare "director"/"head of" deliberately omitted - too noisy)
+  - "director of infrastructure"
+  - "director of platform"
+  - "director of engineering"
+  - "director of site reliability"
+  - "director of cloud"
+  - "infrastructure director"
+  - "platform director"
+  - "engineering director"
+  - "head of infrastructure"
+  - "head of platform"
+  - "head of engineering"
+  - "head of sre"
+  - "head of reliability"
+  - "head of cloud"
+  - "VP engineering"
+  - "VP of engineering"
+  - "VP infrastructure"
+  - "VP of infrastructure"
+  - "vice president, engineering"
+  - "engineering manager"   # noisiest term; tune exclude_terms if too loose
+
+# Matched with word boundaries (see compile_patterns boundary=True). A role
+# passes if it is remote-eligible OR physically inside your commuting radius.
+# Replace the city list below with your own; these are the example persona's
+# Portland, Oregon area plus a few metros inside a few hours' drive.
+location_terms:
+  # remote-eligible
+  - "remote"
+  - "anywhere"
+  - "distributed"
+  - "united states"
+  # inside the commuting radius
+  - "portland"
+  - "beaverton"
+  - "hillsboro"
+  - "tigard"
+  - "gresham"
+  - "milwaukie"
+  - "salem"
+  - "eugene"
+  # a few hours out, comparable to a long commute or an occasional office day
+  - "vancouver"     # Vancouver WA; also matches Vancouver BC, so expect noise
+  - "seattle"
+  - "tacoma"
+  - "olympia"
+  - "bend"
+  - "corvallis"
+  - "boise"
+
+exclude_terms:
+  - "intern"
+  - "junior"
+  - "jr"
+  - "new grad"
+  - "entry level"
+  - "entry-level"
+  - "apprentice"
+  - "sales"
+  - "account executive"
+  - "sales engineer"
+  - "recruiter"
+  - "legal"
+  - "attorney"
+  - "counsel"
+  - "paralegal"
+  - "tax"
+  - "communications"
+  - "public relations"
+  - "procurement"
+  - "product manager"
+  - "program manager"
+  - "clinical"
+  - "nurse"
+  - "nursing"
+  - "accountant"
+  - "accounting"
+  - "controller"
+  - "human resources"
+  - "HR business"
+  - "talent"
+  - "compensation"
+  - "real estate"
+  - "logistics"
+  - "supply chain"
+  - "investment"
+  - "marketing"
+  # hardware / manufacturing / defense-physical (cut hardware-company noise)
+  - "manufacturing"
+  - "propulsion"
+  - "missile"
+  - "missiles"
+  - "rocket"
+  - "embedded"
+  - "flight software"
+  - "mechanical"
+  - "hardware"
+  - "avionics"
+  - "structural"   # aerospace/civil structural eng, not software
+
+# Optional: set here or via the DISCORD_WEBHOOK env var (env wins). Leave it
+# empty in a committed file; a webhook URL is a credential.
+discord_webhook: ""
+
+companies:
+  # A short, representative list. The real file is much longer; this one exists
+  # to show one working entry per ATS integration, not to be a target list.
+  #
+  # `category` is free text carried onto the job row. The buckets used here are
+  # mid_market, regional, gov_defense, enterprise. `regional` is where you add
+  # employers inside your own commuting radius; there are none below because
+  # those are the entries that would name where you live.
+
+  # --- greenhouse: boards.greenhouse.io/SLUG -----------------------------
+  - {name: "Grafana Labs",  ats: greenhouse, slug: grafanalabs,        category: mid_market}
+  - {name: "CockroachDB",   ats: greenhouse, slug: cockroachlabs,      category: mid_market}
+  - {name: "ClickHouse",    ats: greenhouse, slug: clickhouse,         category: mid_market}
+  - {name: "Fastly",        ats: greenhouse, slug: fastly,             category: mid_market}
+  - {name: "CircleCI",      ats: greenhouse, slug: circleci,           category: mid_market}
+  - {name: "Cribl",         ats: greenhouse, slug: cribl,              category: mid_market}
+  - {name: "Tailscale",     ats: greenhouse, slug: tailscale,          category: mid_market}
+  - {name: "PagerDuty",     ats: greenhouse, slug: pagerduty,          category: mid_market}
+  - {name: "Netlify",       ats: greenhouse, slug: netlify,            category: mid_market}
+  - {name: "Pulumi",        ats: greenhouse, slug: pulumicorporation,  category: mid_market}
+
+  # --- lever: jobs.lever.co/SLUG -----------------------------------------
+  - {name: "Sysdig",        ats: lever,      slug: sysdig,             category: mid_market}
+  - {name: "Matillion",     ats: lever,      slug: matillion,          category: mid_market}  # cloud ETL/data integration
+  - {name: "Palantir",      ats: lever,      slug: palantir,           category: gov_defense}
+
+  # --- ashby: jobs.ashbyhq.com/SLUG --------------------------------------
+  # Ashby slugs are case-sensitive and some boards publish a mixed-case or
+  # dotted slug (a bare lowercase guess 404s), so copy it from the board URL.
+  - {name: "Render",        ats: ashby,      slug: render,             category: mid_market}
+  - {name: "Sentry",        ats: ashby,      slug: sentry,             category: mid_market}
+  - {name: "Airbyte",       ats: ashby,      slug: airbyte,            category: mid_market}
+  - {name: "Astronomer",    ats: ashby,      slug: astronomer,         category: mid_market}
+  - {name: "Materialize",   ats: ashby,      slug: materialize,        category: mid_market}
+  - {name: "Kong",          ats: ashby,      slug: kong,               category: mid_market}  # API/AI connectivity
+
+  # --- smartrecruiters: jobs.smartrecruiters.com/SLUG --------------------
+  # Note: SmartRecruiters answers 200 with zero postings for a slug that does
+  # not exist, so a healthy-looking response is not proof the slug is right.
+  - {name: "insightsoftware", ats: smartrecruiters, slug: insightsoftware, category: enterprise}
+
+  # --- workday: HOST/SITE via the unauthenticated cxs endpoint -----------
+  # search_text narrows server-side, which is what makes an oversized tenant
+  # scannable at all. Tradeoff: a search_text'd tenant only surfaces roles
+  # matching that string, so keep it broad ("engineer", not "cloud operations
+  # manager").
+  - {name: "Red Hat",       ats: workday, slug: "redhat.wd5.myworkdayjobs.com/Jobs",                category: enterprise}
+  - {name: "Vanguard",      ats: workday, slug: "vanguard.wd5.myworkdayjobs.com/vanguard_external", search_text: "engineer", category: enterprise}
+
+  # Workday tenants whose HOST/SITE pair is not published anywhere obvious
+  # (often behind a vanity careers domain). No slug means no feed, so these
+  # fall through to the manual list with their careers_url.
+  - {name: "Snowflake",     ats: workday, careers_url: "https://careers.snowflake.com", category: enterprise}
+  - {name: "Capital One",   ats: workday, careers_url: "https://www.capitalonecareers.com", category: enterprise}
+
+  # --- no public feed: icims and manual ----------------------------------
+  # icims, Phenom and Avature publish nothing the scanner can read. Listed
+  # here so the daily run prints the careers URL for a hand check.
+  - {name: "GDIT",          ats: icims,  careers_url: "https://www.gdit.com/careers", category: gov_defense}
+  - {name: "Oracle",        ats: manual, careers_url: "https://careers.oracle.com/en/sites/jobsearch", category: enterprise}  # Oracle Recruiting Cloud
+  - {name: "Maximus",       ats: manual, careers_url: "https://maximus.avature.net/careers", category: gov_defense}  # Avature

@@ -1,0 +1,10 @@
+[Unit]
+Description=the lead inbox UI job ingestion queue drain (job-hound)
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/job-hound
+# Reuse job-hound's env file (ANTHROPIC_API_KEY, DISCORD_WEBHOOK_URL, JOB_DB, JOB_INBOX_DIR)
+EnvironmentFile=%h/.config/job-hound/job-hound.env
+ExecStart=%h/job-hound/bin/ingest-queue.sh

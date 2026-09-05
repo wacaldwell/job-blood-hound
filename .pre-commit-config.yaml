@@ -1,0 +1,30 @@
+# Secret scanning gate.
+#
+# Deliberately narrow. A hook set that also enforces style will fail on
+# pre-existing issues the first time someone edits an old file, and the usual
+# response is --no-verify - which takes the secret scanning down with it. Only
+# secrets are enforced here, so there is never a reason to bypass it.
+#
+# Install (pre-commit is already on this machine via apt):
+#   pre-commit install
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: detect-private-key
+      - id: detect-aws-credentials
+        args: ['--allow-missing-credentials']
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.1
+    hooks:
+      # Scans the staged diff, so pre-existing content never blocks a commit -
+      # only newly introduced secrets do. Discord and Slack webhook rules live
+      # in .gitleaks.toml; the stock ruleset does not catch either.
+      - id: gitleaks
+
+  - repo: https://github.com/sirwart/ripsecrets
+    rev: v0.1.7
+    hooks:
+      - id: ripsecrets

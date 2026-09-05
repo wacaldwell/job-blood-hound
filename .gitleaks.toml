@@ -1,0 +1,23 @@
+# Gitleaks configuration.
+
+[extend]
+useDefault = true
+
+# For a webhook the URL *is* the credential - there is no separate token field
+# for the default rules to key on, and none of the scanners in
+# .pre-commit-config.yaml catches this shape out of the box. Verified: a
+# realistic Discord webhook URL passes stock gitleaks, detect-secrets and
+# ripsecrets untouched. Four live Discord webhooks reached a sibling repo's git
+# history exactly this way, so both providers get explicit rules.
+
+[[rules]]
+id = "discord-webhook-url"
+description = "Discord webhook URL (snowflake id + token)"
+regex = '''https://discord(?:app)?\.com/api/webhooks/[0-9]{17,20}/[A-Za-z0-9_-]{30,}'''
+tags = ["discord", "webhook"]
+
+[[rules]]
+id = "slack-webhook-url"
+description = "Slack incoming webhook URL"
+regex = '''https://hooks\.slack\.com/services/T[A-Za-z0-9]{6,}/B[A-Za-z0-9]{6,}/[A-Za-z0-9]{20,}'''
+tags = ["slack", "webhook"]

@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the lead inbox UI job ingestion every 5 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+Persistent=true
+Unit=job-ingest.service
+
+[Install]
+WantedBy=timers.target

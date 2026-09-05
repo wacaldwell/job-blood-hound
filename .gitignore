@@ -1,0 +1,79 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Local data / generated artifacts (not source)
+jobs.db
+*.db
+*.bak
+new_jobs_*.md
+scan*.txt
+scan.err
+
+# Local working notes / scratch (not source)
+hand-off-*.md
+session-note-*.md
+new-linked-leads.txt
+.playwright-mcp/
+
+# Generated application packages (contain personal contact info) + archived data
+applications/
+archive/
+
+# YOUR OWN identity and search config. NEVER COMMIT THESE.
+#
+# These four un-suffixed filenames are what the code actually loads at runtime,
+# and between them they hold your legal name, email, phone, street-level
+# location, complete employment history, salary floor, commuting radius, and
+# the list of employers you are targeting. That is the whole of the personal
+# data this tool touches, and committing any of it to a public fork publishes
+# a resume plus a job-search plan under your own name.
+#
+# The tracked *.example.* files beside each one carry an identical schema
+# filled in with a fictional persona. Copy the example to the real name and
+# edit it in place:
+#
+#     cp master_resume.example.yaml master_resume.yaml
+#     cp profile.example.yaml       profile.yaml
+#     cp ideal-jd.example.md        ideal-jd.md
+#     cp companies.example.yaml     companies.yaml
+#
+# Keeping the real files ignored is what makes `git add -A` safe here. If you
+# genuinely want to version your own copies, do it in a private repo, never by
+# deleting these four lines.
+master_resume.yaml
+profile.yaml
+ideal-jd.md
+companies.yaml
+
+# OS / tooling
+.DS_Store
+.omc/
+
+# Secrets (never commit)
+# `*.env` already covers most of these, but each one is named explicitly so a
+# repo audit can verify the baseline rather than infer it from a glob.
+.env
+*.env
+.env.*
+.mcp-credentials.env
+# ...but the committed TEMPLATE must survive those patterns. `.env.*` above
+# matches `.env.example`, so without this negation the one env file that is
+# meant to be public would be silently untrackable.
+!.env.example
+secure/
+keypairs/
+
+# LinkedIn data export (contains PII; never commit)
+linkedin-data/
+jobs.db.bak*
+
+# Scratch: interview prep notes and SDD workspaces. Local only, never the
+# repo. Swept in by an over-broad `git add -A` in 143dbde; untracked here.
+.superpowers/
+
+# open-jobs corpus cache. openjobs.cache_dir() sits beside jobs.db on the host,
+# but falls back to the checkout when JOB_DB is unset, and one build of group
+# files is ~37MB.
+openjobs-cache/

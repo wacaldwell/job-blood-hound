@@ -1,0 +1,54 @@
+name: PR checks
+
+# The test suite on every pull request. The `checks` job below is the ONLY
+# required status check on main.
+#
+# The job id IS the branch-protection context here, because no display name
+# is set. Renaming it silently changes what protection must require, so if
+# it ever changes again: land the rename, let it report once, THEN move the
+# protection context. Doing both at once leaves the next PR waiting on a
+# context nothing produces.
+#
+# Code review is NOT done here. It is done by the ChatGPT Codex connector, a
+# GitHub App tied to the maintainer's ChatGPT account that reviews PRs on OpenAI's
+# infrastructure. It needs no key, no secret, and no workflow. AGENTS.md in the
+# repo root is what gives it this project's hard rules.
+#
+# This file used to also run openai/codex-action, a second Codex billed to a
+# platform.openai.com API account rather than the ChatGPT subscription. That
+# wallet emptied on 2026-07-28 and the job failed on every PR for the next
+# week, while the connector kept reviewing normally. It was redundant even when
+# it worked, so it was removed rather than refilled.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+# Don't pile up runs when a PR is pushed to repeatedly.
+concurrency:
+  group: tests-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  # Job id is `checks` in every standardised repo, so one branch-protection
+  # context name works everywhere instead of tests/checks/validate meaning
+  # the same thing in three places.
+  checks:
+    runs-on: ubuntu-latest
+    # Same-repo PRs only, matching how this job has always been gated.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout PR merge commit
+        uses: actions/checkout@v5
+        with:
+          ref: refs/pull/${{ github.event.pull_request.number }}/merge
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run tests
+        run: pytest -q

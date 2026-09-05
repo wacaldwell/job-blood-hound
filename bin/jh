@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# jh - run the job-hound CLI against the single source of truth.
+#
+# There is exactly ONE jobs.db and it lives on the deployment host
+# ($JOB_HOST:~/job-hound/jobs.db). The daily scan, the digest, the web inbox and
+# the MCP server all read and write that one file.
+#
+# Do NOT run `python job_cli.py` directly on your workstation. job_cli defaults
+# JOB_DB to ./jobs.db, so it would silently create a SECOND database, and a second
+# database is exactly the bug this replaced: a workstation-side `apply` could be
+# discarded by the host's nightly scoring pass and never recover. See
+# docs/single-source-of-truth.md.
+#
+# Usage:
+#   bin/jh list --state applied
+#   bin/jh show <ident>
+#   bin/jh draft <ident>          # package is written on the HOST
+#   bin/jh apply <ident>
+#   bin/jh stats
+#
+# After drafting, bring the package down to your workstation so you can attach it:
+#   bin/jh-pull
+#
+# An interactive ssh runs no login shell profile, so the host's secrets have to be
+# sourced explicitly or `draft` dies with "ANTHROPIC_API_KEY not set". The key lives
+# in the host env file below, which the daily cron entry sources too, so this keeps
+# the manual and scheduled paths on one source of secrets.
+#
+# Env:
+#   JOB_HOST             ssh target for the deployment host (REQUIRED, e.g.
+#                        deploy@example-host). There is no default: a personal
+#                        ssh target does not belong in a shared repo, and a
+#                        wrong guess would run commands on somebody else's box.
+#   JOB_HOST_ENV_FILE    host env file to source, home-relative
+#                        (default: .job-hound/env)
+#   HOST_JOB_HOUND_DIR   host checkout, home-relative (default: job-hound)
+set -euo pipefail
+
+HOST="${JOB_HOST:-}"
+if [ -z "$HOST" ]; then
+  echo "bin/jh: JOB_HOST is not set." >&2
+  echo "Set it to the ssh target of the host that owns jobs.db, for example:" >&2
+  echo "  export JOB_HOST=deploy@example-host" >&2
+  exit 2
+fi
+DIR="${HOST_JOB_HOUND_DIR:-job-hound}"
+HOST_ENV_FILE="\$HOME/${JOB_HOST_ENV_FILE:-.job-hound/env}"
+
+if [ "$#" -eq 0 ]; then
+  echo "usage: bin/jh <job_cli command> [args...]   (try: bin/jh stats)" >&2
+  exit 2
+fi
+
+# Quote each argument so titles/slugs with spaces survive the trip through ssh.
+remote_args="$(printf '%q ' "$@")"
+
+# The env file is optional: read-only commands (list, show, stats) work without a
+# key, so a missing file must not block them. `if` with no else exits 0, keeping the
+# && chain alive. The JOB_DB prefix below is assigned AFTER sourcing and so still
+# wins over the file's own JOB_DB, holding the one-database invariant either way.
+exec ssh "$HOST" \
+  "cd ${DIR} && . .venv/bin/activate \
+   && if [ -f \"${HOST_ENV_FILE}\" ]; then set -a; . \"${HOST_ENV_FILE}\"; set +a; fi \
+   && JOB_DB=\"\$PWD/jobs.db\" python3 job_cli.py ${remote_args}"

@@ -1,0 +1,16 @@
+[Unit]
+Description=job-hound write API (the lead inbox UI lead inbox)
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/job-hound
+# Reuse job-hound's env file. JOB_API_TOKEN must be added to it; the same
+# value goes into lead-inbox's environment as JOB_API_TOKEN.
+EnvironmentFile=%h/.config/job-hound/job-hound.env
+ExecStart=%h/job-hound/bin/job-api.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

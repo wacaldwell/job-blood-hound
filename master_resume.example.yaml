@@ -1,0 +1,251 @@
+# master_resume.example.yaml - worked example of the master resume.
+#
+# Copy this to master_resume.yaml and replace every value with your own. The
+# real file is gitignored on purpose, because it carries your name, contact
+# details and full employment history.
+#
+# Source of truth for tailored applications. The generator SELECTS and
+# EMPHASIZES from this; it must not invent anything not grounded here.
+# Keep it complete and accurate. Add detail freely; tailoring trims it down.
+#
+# Everything below describes a fictional candidate, Jordan Rivers, so the
+# schema can be read end to end without inventing it from the loaders.
+#
+# Keys the code reads, and where:
+#   contact          job_generate.write_resume_docx / write_cover_letter_docx
+#                    (name, location, email, phone), gate.build_evidence
+#                    (location only; email and phone are not evidence and are
+#                    never put in a prompt)
+#   summary          gate.build_evidence, the drafting prompt
+#   experience       gate.build_evidence (company, title, start, end, points)
+#                    and the resume renderer (location too)
+#   certifications   gate.build_evidence, resume renderer
+#   skills           gate.build_evidence, resume renderer
+#   education        gate.build_evidence, resume renderer (degree, school)
+#   voice            the drafting prompt
+#   capabilities     gate.load_profile (claim + evidence, both required)
+#   do_not_claim     gate.load_profile / gate.enforce / gate.ledger_sweep
+#                    (claim + at least one of match / match_word)
+#   works_as         gate.title_check
+
+contact:
+  name: Jordan Rivers
+  title: Cloud Operations Manager
+  location: Portland, OR 97205
+  email: jordan.rivers@example.com
+  phone: (555) 010-4477
+
+summary: >
+  Cloud operations and platform leader with 12+ years across DevOps, SRE, and
+  cloud infrastructure, including nine years at Helio Payments. Most recently
+  ran an AWS Organization of 10 accounts (over $1M/year in cloud spend) behind
+  a platform serving roughly 1 billion requests per month, owning security,
+  compliance (SOC 2, ISO 27001), and Terraform-based infrastructure as code.
+  Has led small engineering teams for over 6 years (4 years 9 months at Helio
+  Payments, 19 months at Northwind Commerce) and built practical GenAI tooling
+  for operations, including a self-built incident-triage assistant,
+  MCP-connected tooling, frontier models for coding workflows, agent-assisted
+  PR review, multi-agent workflows, and agent rules that keep AI-generated code
+  aligned with team conventions, and reviewed an Amazon Bedrock rollout for
+  best-practice alignment.
+
+experience:
+  - company: Northwind Commerce (acquired by Vantage Retail Group)
+    title: Cloud Operations Manager
+    location: Remote
+    start: Dec 2022
+    end: Jul 2024
+    points:
+      - Led cloud operations for an AWS Organization of 10 accounts (over $1M/year in cloud spend) behind a platform serving roughly 1 billion requests per month, keeping it secure, compliant, and scalable.
+      - Managed a team of 3, acting as both architect and hands-on operator across cloud, security, and DevOps.
+      - Owned AWS Security Hub, IAM, and Identity Center, and worked with third-party security vendors on threat detection and incident response.
+      - Drove cloud governance across every account, and helped drive SOC 2 and ISO 27001 compliance to completion.
+      - Designed and maintained Terraform IaC frameworks for resilient, secure infrastructure.
+      - Built and operated the production CI/CD pipelines in GitHub Actions.
+      - Built internal AI tooling that sped incident triage and resolution by drawing on the history of past incidents.
+      - Authored global and repo-specific AI agent rules, standardized multi-model AI tooling, and used frontier models for coding workflows, agent-assisted PR review, and MCP-connected tools to keep AI-generated code aligned with team conventions.
+      - Drove company-wide AI adoption: presented to engineering and the CTO, and helped define the AI standards the org rolled out.
+      - Reviewed the Amazon Bedrock rollout plan and worked with the development team to keep the deployment aligned with AWS best practices.
+      - Partnered directly and regularly with AWS Technical Account Managers and Solutions Architects to drive architecture best practices, service selection, and cost management across the platform.
+
+  - company: Helio Payments
+    title: Manager II, Site Operations
+    location: Remote
+    start: Jun 2017
+    end: Mar 2022
+    points:
+      - Led a team of 4 responsible for the reliability, performance, and security of the company website and payment platform.
+      - Ran root cause analysis on recurring outages and drove the fixes that improved uptime and cut repeat incidents.
+      - Led migration of on-site DNS infrastructure to Google Cloud, improving reliability and scalability.
+      - Raised engineering standards through code reviews and test-driven development.
+      - Owned PCI DSS compliance for the payment platform using Splunk reporting with Security Operations.
+      - Drove Agile/Scrum planning and on-time delivery across the team.
+
+  - company: Helio Payments
+    title: DevOps Engineer
+    location: Portland, OR
+    start: Jul 2013
+    end: May 2017
+    points:
+      - Led operational transformation with Docker containerization and automated monitoring, significantly reducing incident response times.
+      - Built monitoring, alerting, and runbooks that improved reliability and helped services meet their uptime and SLA targets.
+      - Delivered 24/7 production support through on-call rotations.
+      - Reduced toil and human error by building IaC with Terraform, Jenkins, Puppet, Bash, and Ansible.
+      - Coordinated production releases with zero downtime.
+
+  - company: Trellis Networks
+    title: DevOps Engineer
+    location: Beaverton, OR
+    start: Jul 2011
+    end: Jun 2013
+    points:
+      - Built a bespoke Nagios live-video-stream observability system monitoring 1,400 video feeds across a global CDN.
+      - Validated critical services (Wowza, Varnish proxy cache), managed nodes in and out of production, optimized load balancing.
+      - Led team and customer-facing documentation in a NOC environment.
+
+certifications:
+  - AWS Certified Solutions Architect - Associate (June 2024)
+
+skills:
+  - Reliability: SRE, incident management, disaster recovery, production release coordination
+  - Observability and monitoring: Grafana (cloud and self-hosted), Datadog, InfluxDB, Telegraf, Splunk, LogicMonitor
+  - Cloud: AWS (multi-account Organizations), GCP, AWS Well-Architected Framework
+  - Containers and CI/CD: Docker, GitHub Actions, Jenkins
+  - IaC and automation: Terraform, Puppet, Jenkins, Ansible, Bash
+  - Security and compliance: AWS Security Hub, IAM, Identity Center, SOC 2, ISO 27001, PCI DSS
+  - GenAI and ML: GenAI/LLM-assisted operations tooling, Amazon Bedrock rollout review and best-practice alignment, agent rules, AI-accelerated DevOps
+  - Practice: CI/CD, Agile/Scrum, project management
+
+education:
+  - degree: Bachelor's Degree, Information Science
+    school: Cascade State University
+
+# Hard voice rules the generator must follow.
+voice:
+  - Plain English. No jargon for its own sake.
+  - Never use em dashes or double hyphens. Use commas, parentheses, or separate sentences.
+  - Accuracy over keyword stuffing. Emphasize what is true and relevant; never fabricate.
+  - Never derive or compute a number that is not written in this file. Do not infer years of experience, tenure, or team counts from dates. Use only figures stated here, verbatim.
+  - Every role here has ended, including the most recent one. Write all experience bullets in past tense, and never imply current employment.
+  - For management or leadership roles, keep the years of team leadership from the summary. It is a core qualification, not filler, so do not trim it when tightening.
+  - Select at most 6 bullets per role, and fewer for older roles. This file is the complete superset to choose from, not the output. Pick the bullets most relevant to the target job and drop the rest; a tight 6 beats a diluted 10.
+  - Each bullet must be distinct. Never repeat the same metric or a near-duplicate accomplishment across bullets; if two bullets say the same thing, keep the stronger one and drop the other.
+  - Prefer a few credible, specific numbers over many round ones. Do not attach a percentage to every bullet.
+
+# --- Fit Gate ledger ------------------------------------------------------
+# Read by gate.py. capabilities are what the candidate can defend with
+# evidence; do_not_claim are the hard disqualifiers that overrule the model
+# outright. A claim with no evidence is not a capability and the loader
+# rejects it, so never leave `evidence` blank to "fill in later".
+
+capabilities:
+  - claim: multi-account AWS governance and cloud operations
+    evidence: Northwind Commerce, AWS Organization of 10 accounts, over $1M/year spend, Dec 2022 to Jul 2024
+  - claim: AWS security tooling (Security Hub, IAM, Identity Center)
+    evidence: Northwind Commerce, owned Security Hub, IAM and Identity Center, Dec 2022 to Jul 2024
+  - claim: infrastructure as code with Terraform
+    evidence: Northwind Commerce, designed and maintained Terraform IaC frameworks; Helio Payments DevOps, Terraform/Puppet/Jenkins
+  - claim: compliance programs (SOC 2, ISO 27001, PCI DSS)
+    evidence: Northwind Commerce, drove SOC 2 and ISO 27001 to completion; Helio Payments, owned PCI DSS for the payment platform
+  - claim: incident management and root cause analysis at scale
+    evidence: Helio Payments Manager II Site Operations, led RCA on recurring outages, 2017 to 2022
+  - claim: observability tooling (Grafana, Splunk, Nagios)
+    # Datadog deliberately NOT claimed here (operator ruling, 2026-08-19):
+    # familiarity only, so it stays in the skills list and is never evidence
+    # for a capability. This is the pattern for anything you have touched but
+    # could not defend in an interview.
+    evidence: Trellis Networks, built a Nagios system monitoring 1,400 video feeds across a global CDN; Helio Payments DevOps, built monitoring, alerting and runbooks that met uptime and SLA targets; Helio Payments, PCI DSS reporting via Splunk
+  - claim: leading engineering teams
+    evidence: Helio Payments, led a team of 4; Northwind Commerce, managed a team of 3
+  - claim: AI-accelerated DevOps tooling and agent rules
+    evidence: Northwind Commerce, built an incident-triage assistant, standardized multi-model AI tooling, authored global and repo-specific agent rules
+  - claim: Docker containerization
+    evidence: Helio Payments DevOps, led operational transformation with Docker containerization, Jul 2013 to May 2017
+  - claim: AWS Well-Architected Framework
+    evidence: AWS Certified Solutions Architect Associate (June 2024); Northwind Commerce, partnered with AWS TAMs and Solutions Architects on architecture best practices; reviewed the Bedrock rollout for AWS best-practice alignment
+  - claim: CI/CD pipelines with GitHub Actions
+    evidence: GitHub Actions deploy and PR-validation workflows across personal infrastructure repos; Helio Payments DevOps, CI/CD with Jenkins
+  - claim: AWS partnership and cost management
+    evidence: Northwind Commerce, partnered with AWS TAMs and Solutions Architects on architecture, service selection and cost
+  - claim: CI/CD pipeline ownership (GitHub Actions, Jenkins)
+    evidence: Northwind Commerce, built and operated the production CI/CD pipelines in GitHub Actions; Helio Payments DevOps, Jenkins and zero-downtime release coordination
+
+# The gate forces NONE on any requirement matching these, whatever the model
+# says. A missing entry here is a silent hole, so add to this list every time a
+# real posting teaches you a gap. Each entry needs a `claim` and at least one
+# of `match` (lowercase substrings) or `match_word` (whole normalized words).
+do_not_claim:
+  - claim: hand-writing production code
+    # The candidate directs AI tools and judges the output. That is a real
+    # skill, and it is not the same skill a live-coding loop tests for.
+    # The player-coach tokens were added after one live posting slipped the
+    # ledger: it asked for a "hands-on engineering background in Python and at
+    # least one other backend language, with the ability to read, review, and
+    # contribute to production code" and the model bridged that to PARTIAL off
+    # Bash and Terraform scripting, so a role that wants a manager who codes
+    # came back RECOMMEND. The operator rated it a weak match by hand.
+    match:
+      - proficient in python
+      - proficient in go
+      - python or go
+      - write production code
+      - writing production code
+      - strong programming
+      - hands-on coding
+      - codes daily
+      - contribute to production code
+      - contribute code
+      - backend language
+      - background in python
+      - hands-on technical contributions
+      - player-coach
+  - claim: data catalog architecture
+    # Kept narrow on purpose. "data catalog" is the artifact being asked for;
+    # widening it to bare "catalog" or "metadata" would force a false NONE on
+    # ordinary platform postings.
+    match:
+      - data catalog
+      - data cataloging
+  - claim: event correlation
+    # On one live run the model rationalized "correlation" into a PARTIAL by
+    # citing the incident-triage assistant as "signal correlation work". The
+    # ledger forced it back to NONE, which is exactly what the ledger is for:
+    # it overrules the model outright and is the only thing that can.
+    match:
+      - correlation
+  - claim: high-throughput streaming platforms built from the ground up
+    match:
+      - kafka
+      - kinesis
+      - streaming platform
+  - claim: container orchestration platforms (Kubernetes, EKS, ECS)
+    # Docker and containerization ARE the candidate's (Helio Payments DevOps
+    # 2013 to 2017, and the Containers skill line), so this entry names the
+    # ORCHESTRATION PLATFORM and never containers on their own. Widening it to
+    # "container" would make the semantic screen force a false NONE on plain
+    # Docker requirements too, which is the over-match failure this ledger
+    # already hit once on scripting.
+    #
+    # "ecs" and "eks" go in match_word, not match: they are inside "specs" and
+    # "weeks", so a substring token would misfire on ordinary JD wording, while
+    # multi-word forms ("amazon ecs", "ecs or eks") miss a requirement written
+    # as a bare "ECS". match_word matches whole normalized words and catches
+    # both.
+    match:
+      - kubernetes
+      - k8s
+      - kubernetes administration
+      - container orchestration
+      - orchestration platform
+    match_word:
+      - ecs
+      - eks
+
+# How the candidate actually works, for the gate's title check. A title whose
+# role-noun is not in this list predicts an interview loop shaped differently
+# than the way they work.
+works_as:
+  - manager
+  - architect
+  - lead
+  - director

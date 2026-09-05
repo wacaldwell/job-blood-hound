@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# jh-pull - copy generated application packages down from the deployment host.
+#
+# `bin/jh draft <ident>` runs on the host, so the DOCX/PDF land in the host's
+# ~/job-applications. You apply by hand from the Mac, so pull them down here.
+#
+# Existing local files are never overwritten (--ignore-existing): re-drafting
+# bumps the version (v2, v3, ...) and arrives as a new file, so nothing you have
+# already reviewed or edited is clobbered.
+#
+# Usage:
+#   bin/jh-pull              pull everything new
+#   bin/jh-pull vannevar     pull only packages matching a substring
+#
+# Env:
+#   JOB_HOST       ssh target for the deployment host (REQUIRED, e.g.
+#                  deploy@example-host). There is no default: a personal ssh
+#                  target does not belong in a shared repo.
+#   JOB_APPS_DIR   local destination (default: ~/job-applications)
+set -euo pipefail
+
+HOST="${JOB_HOST:-}"
+if [ -z "$HOST" ]; then
+  echo "bin/jh-pull: JOB_HOST is not set." >&2
+  echo "Set it to the ssh target of the host that holds your packages, for example:" >&2
+  echo "  export JOB_HOST=deploy@example-host" >&2
+  exit 2
+fi
+DEST="${JOB_APPS_DIR:-$HOME/job-applications}"
+FILTER="${1:-}"
+
+mkdir -p "$DEST"
+
+# Note: macOS ships openrsync, which does not support --info=name1. Use -v.
+if [ -n "$FILTER" ]; then
+  echo "[jh-pull] pulling packages matching '*${FILTER}*' -> $DEST"
+  rsync -av --ignore-existing \
+    --include="*${FILTER}*/" --include="*${FILTER}*/**" --exclude="*" \
+    "$HOST:job-applications/" "$DEST/"
+else
+  echo "[jh-pull] pulling all packages -> $DEST"
+  rsync -av --ignore-existing "$HOST:job-applications/" "$DEST/"
+fi
+
+echo "[jh-pull] done."

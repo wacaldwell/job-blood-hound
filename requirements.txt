@@ -1,0 +1,27 @@
+anthropic
+python-docx
+requests
+curl_cffi
+beautifulsoup4
+pyyaml
+# openjobs.py loads the corpus centroid matrix, 15,011 nodes x 1,536 dims.
+# The reason is MEMORY, not speed. Measured: 92MB as a numpy float32 array
+# against 739MB as a Python list of lists (23M float objects plus per-list
+# overhead), on a tools host with 8GB total that is also running Mission
+# Control, the write API and Grafana. Speed is a lesser bonus and an earlier
+# version of this comment overstated it: the ranking is ~0.005s in numpy
+# against ~0.48s in pure Python, which on a daily cron would have been an
+# entirely acceptable cost on its own.
+# Pinned below 3.0 for the reason mcp is pinned: a major bump is a known
+# breaking change and this runs unattended.
+numpy>=1.26,<3
+pytest
+# Pinned below 2.0: job_hound_mcp.build_server() imports
+# `from mcp.server.fastmcp import FastMCP`, and 2.0.0 (released 2026-07-28)
+# no longer provides that module path. Local and the tools host both run
+# 1.28.1; only CI, which installs fresh, saw the break. Unpin when
+# build_server is ported to whatever 2.x calls this.
+mcp>=1.28,<2
+fastapi
+uvicorn
+httpx
